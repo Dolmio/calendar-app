@@ -18,17 +18,30 @@ db.once('open', () => setupRoutes());
 app.use(bodyParser.json())
 
 function setupRoutes() {
-  app.get('/', function(req, res) {
-    res.send('hello world');
-  });
-
-  app.get('/event' , getCalendarEventsRoute);
+  app.get('/event', getCalendarEventsRoute);
+  app.get('/event/:id', getCalendarEventRoute);
   app.post('/event', createCalendarEventRoute);
 }
 
 function getCalendarEventsRoute(req, res) {
   CalendarEvent.find().exec().then(function(results) {
     res.sendStatus(results)
+  }, function(error) {
+    res.status(500).json(error)
+  })
+}
+
+function getCalendarEventRoute(req, res) {
+  var objectId;
+  try{
+    objectId = mongoose.Types.ObjectId(req.params.id)
+  }
+  catch(err) {
+    return res.status(400).json({message: err.message})
+  }
+
+  CalendarEvent.find({_id: objectId}).exec().then(function(result) {
+    res.sendStatus(result)
   }, function(error) {
     res.status(500).json(error)
   })
