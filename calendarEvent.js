@@ -1,15 +1,31 @@
-const mongoose = require('mongoose')
+const validate = require('validate.js');
+const moment = require('moment');
 
-const CalendarEvent = mongoose.Schema({
-  description: {type: String, required: true},
-  location: String,
-  startTime: {type: Date, required: true},
-  endTime: {type: Date, required: true, validate: [dateValidator, 'startTime must be less than endTime']}
-});
+validate.moment = moment;
+validate.validators.before = beforeValidator;
 
-function dateValidator(value) {
-  // `this` is the mongoose document
-  return this.startTime < value;
+const constraints =  {
+  _id:{},
+  description: {
+    presence: true
+  },
+  location: {},
+
+  startTime: {
+    presence: true,
+    datetime: true,
+    before: "endTime"
+  },
+
+  endTime: {
+    presence: true,
+    datetime: true
+  }
+};
+
+function beforeValidator(value, options, key, attributes) {
+  const other = attributes[options];
+  return value < other ? null : value + " must be smaller than " + other
 }
 
-module.exports = mongoose.model("CalendarEvent", CalendarEvent);
+module.exports = {constraints};

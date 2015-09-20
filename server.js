@@ -1,63 +1,93 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const Promise = require('bluebird');
+const MongoDB = Promise.promisifyAll(require('mongodb'));
+const R = require('ramda');
+const validatejs = require('validate.js');
 const app = express();
+
 const CalendarEvent = require('./calendarEvent');
+const ValidationErrors = require('./validationErrors');
 
-mongoose.connect('mongodb://localhost/calendar-app');
+validatejs.Promise = Promise;
+app.use(bodyParser.json());
 
-const db = mongoose.connection;
-
-db.on('error', function(callback) {
-  console.error(callback);
-  process.exit(1);
-});
-
-db.once('open', () => setupRoutes());
-
-app.use(bodyParser.json())
-
-function setupRoutes() {
-  app.get('/event', getCalendarEventsRoute);
-  app.get('/event/:id', getCalendarEventRoute);
-  app.post('/event', createCalendarEventRoute);
-}
-
-function getCalendarEventsRoute(req, res) {
-  CalendarEvent.find().exec().then(function(results) {
-    res.sendStatus(results)
-  }, function(error) {
-    res.status(500).json(error)
-  })
-}
-
-function getCalendarEventRoute(req, res) {
-  var objectId;
-  try{
-    objectId = mongoose.Types.ObjectId(req.params.id)
+MongoDB.MongoClient.connectAsync('mongodb://localhost/calendar-app')
+  .then((db) => setupRoutes(db))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1)
   }
-  catch(err) {
-    return res.status(400).json({message: err.message})
-  }
-
-  CalendarEvent.find({_id: objectId}).exec().then(function(result) {
-    res.sendStatus(result)
-  }, function(error) {
-    res.status(500).json(error)
-  })
-}
-
-function createCalendarEventRoute(req, res) {
-  CalendarEvent.create(req.body, function(err, created) {
-    if(err) {
-      res.status(500).json(err.errors)
-    }
-    else {
-      res.status(200).json(created)
-    }
-  })
-}
+);
 
 const server  = app.listen(3000, function () {
   console.log('Server listening in port', server.address().port);
 });
+
+function setupRoutes(db) {
+
+  const calendarEventsCollection = db.collection("calendarEvents");
+
+  app.get('/event', getCalendarEventsRoute(calendarEventsCollection));
+  app.get('/event/:id', getCalendarEventRoute(calendarEventsCollection));
+  app.post('/event', createCalendarEventRoute(calendarEventsCollection));
+  app.put('/event/:id', editCalendarEventRoute(calendarEventsCollection));
+}
+
+function getCalendarEventsRoute(eventsCollection) {
+  return (req, res) => {
+    eventsCollection.find({}).toArrayAsync()
+      .then((results) => res.status(200).json(results))
+      .catch((error) => res.status(500).json(errorToObject(error)))
+  }
+}
+
+function getCalendarEventRoute(eventsCollection) {
+  return (req, res) => {
+    resolveObjectId(req.params.id)
+      .then((objectId) => eventsCollection.findOneAsync({_id: objectId}))
+      .then((result) => result != null ? res.status(200).json(result) : res.sendStatus(404))
+      .catch((error) => res.status(500).json(errorToObject(error)))
+  }
+}
+
+function createCalendarEventRoute(eventsCollection) {
+  return (req, res) => {
+    validate(req.body, CalendarEvent.constraints)
+      .then(() => eventsCollection.insertAsync(req.body))
+      .then((created) =>  res.status(201).json(created.ops[0]))
+      .catch(ValidationErrors, (validationError) => res.status(400).json(validationError.errors))
+      .catch((error) => res.status(500).json(errorToObject(error)))
+  }
+}
+
+function editCalendarEventRoute(eventsCollection) {
+  return (req, res) => {
+    resolveObjectId(req.params.id)
+      .then((objectId) => eventsCollection.findOneAsync({_id: objectId}))
+      .then((event) => event != null ? validate(R.merge(event, req.body), CalendarEvent.constraints) : Promise.reject(new NotFoundError()))
+      .then((mergedEvent) => eventsCollection.findAndModifyAsync({_id: MongoDB.ObjectID(mergedEvent._id)}, [['_id','asc']], mergedEvent, {new: true}))
+      .then((result) =>  res.status(200).json(result.value))
+      .catch(NotFoundError, () => res.sendStatus(404))
+      .catch(ValidationErrors, (validationError) => res.status(400).json(validationError.errors))
+      .catch((error) => res.status(500).json(errorToObject(error)))
+  }
+}
+
+function errorToObject(error) {
+  return {message: error.message}
+}
+
+function NotFoundError() {
+  Error.captureStackTrace(this, this.constructor);
+}
+NotFoundError.prototype = new Error();
+
+function validate(attrs, constraints) {
+  return validatejs.async(attrs,constraints, {wrapErrors: ValidationErrors})
+}
+
+function resolveObjectId(objectId) {
+  //wraps synchornous function to Promise, so that invalid objectiId error handling comes for free
+  return Promise.method((id) => MongoDB.ObjectId(id))(objectId)
+}
