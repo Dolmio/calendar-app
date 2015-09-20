@@ -32,6 +32,7 @@ function setupRoutes(db) {
   app.get('/event/:id', getCalendarEventRoute(calendarEventsCollection));
   app.post('/event', createCalendarEventRoute(calendarEventsCollection));
   app.put('/event/:id', editCalendarEventRoute(calendarEventsCollection));
+  app.delete('/event/:id', deleteCalendarEventRoute(calendarEventsCollection));
 }
 
 function getCalendarEventsRoute(eventsCollection) {
@@ -71,6 +72,15 @@ function editCalendarEventRoute(eventsCollection) {
       .catch(NotFoundError, () => res.sendStatus(404))
       .catch(ValidationErrors, (validationError) => res.status(400).json(validationError.errors))
       .catch((error) => res.status(500).json(errorToObject(error)))
+  }
+}
+
+function deleteCalendarEventRoute(eventsCollection) {
+  return (req, res) => {
+    resolveObjectId(req.params.id)
+    .then((objectId) => eventsCollection.deleteOneAsync({_id: objectId}))
+    .then((response) => response.result.n != 0 ? res.status(200).json(response) : res.sendStatus(404))
+    .catch((error) => res.status(500).json(errorToObject(error)))
   }
 }
 
