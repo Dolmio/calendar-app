@@ -75,6 +75,48 @@ function editCalendarEventRoute(eventsCollection) {
   }
 }
 
+/*
+same as editCalendarEventRoute but written with traditional callbacks
+ */
+/*
+function editCalendarEventRouteCallbackStyle(eventsCollection) {
+  return (req, res) => {
+    var objectId;
+    try {
+      objectId = MongoDb.ObjectId(req.params.id)
+    }catch(e) {
+      return res.status(400).json(errorToObject(e))
+    }
+
+    eventsCollection.findOne({_id: objectId}, (err, event) => {
+      if(err) {
+        return res.status(500).json(errorToObject(error))
+      }
+      else if(event == null) {
+        return res.sendStatus(404)
+      }
+      else {
+        const merged = R.merge(event, req.body)
+        const validationErrors = validatejs.validate(merged, CalendarEvent.constraints)
+
+        if(validationErrors) {
+          return res.status(400).json(errorToObject(validationErrors))
+        }
+        else{
+          eventsCollection.findAndModifyAsync({_id: MongoDB.ObjectID(mergedEvent._id)}, [['_id','asc']], mergedEvent, {new: true}, (err, result) => {
+            if(err) {
+              res.status(500).json(errorToObject(error))
+            }
+            else {
+              res.status(200).json(result.value)
+            }
+          })
+        }
+      }
+    })
+  }
+}
+*/
 function deleteCalendarEventRoute(eventsCollection) {
   return (req, res) => {
     resolveObjectId(req.params.id)
