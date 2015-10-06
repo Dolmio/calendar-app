@@ -30,6 +30,7 @@ function setupRoutes(db) {
 
   app.get('/event', getCalendarEventsRoute(calendarEventsCollection));
   app.get('/event/:id', getCalendarEventRoute(calendarEventsCollection));
+  app.get('/event/find/:txt', findCalendarEventsRoute(calendarEventsCollection));
   app.post('/event', createCalendarEventRoute(calendarEventsCollection));
   app.put('/event/:id', editCalendarEventRoute(calendarEventsCollection));
   app.delete('/event/:id', deleteCalendarEventRoute(calendarEventsCollection));
@@ -52,12 +53,24 @@ function getCalendarEventRoute(eventsCollection) {
   }
 }
 
+function findCalendarEventsRoute(eventsCollection) {
+  return (req, res) => {
+  eventsCollection.find( {$or : [
+			{'description' : {$regex: req.params.txt, $options: 'i'}}, 
+			{'location' : {$regex: req.params.txt, $options: 'i'}}, 
+			{$and : [{'startTime' : {$lte: Number(req.params.txt) }}, {'endTime' : {$gte: Number(req.params.txt)}}]}
+	  ]}).toArrayAsync()
+      .then((results) => res.status(200).json(results))
+      .catch((error) => res.status(500).json(errorToObject(error)))
+  }
+}
+
 function createCalendarEventRoute(eventsCollection) {
   return (req, res) => {
     validate(req.body, CalendarEvent.constraints)
       .then(() => eventsCollection.insertAsync(req.body))
       .then((created) =>  res.status(201).json(created.ops[0]))
-      .catch(ValidationErrors, (validationError) => res.status(400).json(validationError.errors))
+      .catch(ValidationErrors, (validationError) => res.status(401).json(validationError.errors))
       .catch((error) => res.status(500).json(errorToObject(error)))
   }
 }
