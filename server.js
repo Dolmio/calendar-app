@@ -30,7 +30,6 @@ function setupRoutes(db) {
 
   app.get('/event', getCalendarEventsRoute(calendarEventsCollection));
   app.get('/event/:id', getCalendarEventRoute(calendarEventsCollection));
-  app.get('/event/find/:txt', findCalendarEventsRoute(calendarEventsCollection));
   app.post('/event', createCalendarEventRoute(calendarEventsCollection));
   app.put('/event/:id', editCalendarEventRoute(calendarEventsCollection));
   app.delete('/event/:id', deleteCalendarEventRoute(calendarEventsCollection));
@@ -38,10 +37,21 @@ function setupRoutes(db) {
 
 function getCalendarEventsRoute(eventsCollection) {
   return (req, res) => {
-    eventsCollection.find({}).toArrayAsync()
-      .then((results) => res.status(200).json(results))
-      .catch((error) => res.status(500).json(errorToObject(error)))
+		eventsCollection.find(resolveEventQuery(req.query.searchQuery)).toArrayAsync()
+		  .then((results) => res.status(200).json(results))
+		  .catch((error) => res.status(500).json(errorToObject(error)))
   }
+}
+function resolveEventQuery(searchQuery){
+	if(searchQuery){
+		return  {$or : [
+			{'description' : {$regex: searchQuery, $options: 'i'}}, 
+			{'location' : {$regex: searchQuery, $options: 'i'}}, 
+			{$and : [{'startTime' : {$lte: Number(searchQuery) }}, {'endTime' : {$gte: Number(searchQuery)}}]}
+		]};
+	} else {
+		return {};
+	}
 }
 
 function getCalendarEventRoute(eventsCollection) {
@@ -55,13 +65,7 @@ function getCalendarEventRoute(eventsCollection) {
 
 function findCalendarEventsRoute(eventsCollection) {
   return (req, res) => {
-  eventsCollection.find( {$or : [
-			{'description' : {$regex: req.params.txt, $options: 'i'}}, 
-			{'location' : {$regex: req.params.txt, $options: 'i'}}, 
-			{$and : [{'startTime' : {$lte: Number(req.params.txt) }}, {'endTime' : {$gte: Number(req.params.txt)}}]}
-	  ]}).toArrayAsync()
-      .then((results) => res.status(200).json(results))
-      .catch((error) => res.status(500).json(errorToObject(error)))
+
   }
 }
 
