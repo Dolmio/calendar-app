@@ -63,12 +63,6 @@ function getCalendarEventRoute(eventsCollection) {
   }
 }
 
-function findCalendarEventsRoute(eventsCollection) {
-  return (req, res) => {
-
-  }
-}
-
 function createCalendarEventRoute(eventsCollection) {
   return (req, res) => {
     validate(req.body, CalendarEvent.constraints)
