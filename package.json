@@ -15,6 +15,7 @@
     "moment": "^2.10.6",
     "mongodb": "^2.0.43",
     "ramda": "^0.17.1",
-    "validate.js": "^0.8.0"
+    "validate.js": "^0.8.0",
+    "moment": "2.10.6"
   }
 }

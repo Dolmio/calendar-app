@@ -4,6 +4,7 @@ const Promise = require('bluebird');
 const MongoDB = Promise.promisifyAll(require('mongodb'));
 const R = require('ramda');
 const validatejs = require('validate.js');
+const moment = require('moment');
 const app = express();
 
 const CalendarEvent = require('./calendarEvent');
@@ -66,7 +67,7 @@ function getCalendarEventRoute(eventsCollection) {
 function createCalendarEventRoute(eventsCollection) {
   return (req, res) => {
     validate(req.body, CalendarEvent.constraints)
-      .then(() => eventsCollection.insertAsync(req.body))
+      .then((validatedData) => eventsCollection.insertAsync(toEventModel(validatedData)))
       .then((created) =>  res.status(201).json(created.ops[0]))
       .catch(ValidationErrors, (validationError) => res.status(401).json(validationError.errors))
       .catch((error) => res.status(500).json(errorToObject(error)))
@@ -78,7 +79,7 @@ function editCalendarEventRoute(eventsCollection) {
     resolveObjectId(req.params.id)
       .then((objectId) => eventsCollection.findOneAsync({_id: objectId}))
       .then((event) => event != null ? validate(R.merge(event, req.body), CalendarEvent.constraints) : Promise.reject(new NotFoundError()))
-      .then((mergedEvent) => eventsCollection.findAndModifyAsync({_id: MongoDB.ObjectID(mergedEvent._id)}, [['_id','asc']], mergedEvent, {new: true}))
+      .then((mergedEvent) => eventsCollection.findAndModifyAsync({_id: MongoDB.ObjectID(mergedEvent._id)}, [['_id','asc']], toEventModel(mergedEvent), {new: true}))
       .then((result) =>  res.status(200).json(result.value))
       .catch(NotFoundError, () => res.sendStatus(404))
       .catch(ValidationErrors, (validationError) => res.status(400).json(validationError.errors))
@@ -135,6 +136,11 @@ function deleteCalendarEventRoute(eventsCollection) {
     .then((response) => response.result.n != 0 ? res.status(200).json(response) : res.sendStatus(404))
     .catch((error) => res.status(500).json(errorToObject(error)))
   }
+}
+
+function toEventModel(data) {
+  return R.mapObjIndexed((val, key) => key == "startTime" || key == "endTime" ? moment(val).toDate() : val
+    , data)
 }
 
 function errorToObject(error) {
