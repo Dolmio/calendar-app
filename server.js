@@ -9,6 +9,7 @@ const app = express();
 
 const CalendarEvent = require('./calendarEvent');
 const ValidationErrors = require('./validationErrors');
+const mailSender = require('./mailSender');
 
 validatejs.Promise = Promise;
 app.use(bodyParser.json());
@@ -64,23 +65,48 @@ function getCalendarEventRoute(eventsCollection) {
   }
 }
 
+function sendEmailToNewAttendees(event, oldAttendees, newAttendees) {
+  const recipients = resolveRecipientsForAttendanceEmail(oldAttendees, newAttendees);
+  if(!R.isEmpty(recipients)){
+    mailSender.sendAttendanceMail(event, recipients);
+  }
+}
+
+function resolveRecipientsForAttendanceEmail(oldAttendees, newAttendees) {
+  return oldAttendees ?  R.difference(newAttendees, oldAttendees) : newAttendees;
+}
+
 function createCalendarEventRoute(eventsCollection) {
   return (req, res) => {
     validate(req.body, CalendarEvent.constraints)
       .then((validatedData) => eventsCollection.insertAsync(toEventModel(validatedData)))
-      .then((created) =>  res.status(201).json(created.ops[0]))
+      .then((result) => {
+        const created = result.ops[0];
+        sendEmailToNewAttendees(created, null, created.attendees);
+        return res.status(201).json(created);
+      }  )
       .catch(ValidationErrors, (validationError) => res.status(401).json(validationError.errors))
       .catch((error) => res.status(500).json(errorToObject(error)))
   }
 }
 
 function editCalendarEventRoute(eventsCollection) {
+
+  function continueEditing(oldEvent, req, res) {
+    return validate(R.merge(oldEvent, req.body), CalendarEvent.constraints)
+      .then((mergedEvent) => eventsCollection.findAndModifyAsync({_id: MongoDB.ObjectID(mergedEvent._id)}, [['_id','asc']], toEventModel(mergedEvent), {new: true}))
+      .then((result) =>  {
+        const updatedEvent = result.value;
+        sendEmailToNewAttendees(updatedEvent, oldEvent.attendees, updatedEvent.attendees)
+        return res.status(200).json(updatedEvent)
+      })
+  }
+
+
   return (req, res) => {
     resolveObjectId(req.params.id)
       .then((objectId) => eventsCollection.findOneAsync({_id: objectId}))
-      .then((event) => event != null ? validate(R.merge(event, req.body), CalendarEvent.constraints) : Promise.reject(new NotFoundError()))
-      .then((mergedEvent) => eventsCollection.findAndModifyAsync({_id: MongoDB.ObjectID(mergedEvent._id)}, [['_id','asc']], toEventModel(mergedEvent), {new: true}))
-      .then((result) =>  res.status(200).json(result.value))
+      .then((oldEvent) => oldEvent != null ? continueEditing(oldEvent, req, res) : Promise.reject(new NotFoundError()))
       .catch(NotFoundError, () => res.sendStatus(404))
       .catch(ValidationErrors, (validationError) => res.status(400).json(validationError.errors))
       .catch((error) => res.status(500).json(errorToObject(error)))

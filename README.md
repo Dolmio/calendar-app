@@ -86,6 +86,7 @@ git push production master
                       "location": "Espoo3",
                       "startTime": "2015-02-08 09:30",
                       "endTime": "2015-02-08 10:30",
+                      "attendees: ["example@gmail.com"]
                       "_id": "5613c934b03343196a0b1893"
                   }`
 
@@ -246,6 +247,7 @@ git push production master
     **Optional:**
 
     `location=[string]`
+    `attendees=[array[email]]`
 
 * **Success Response:**
 
@@ -255,6 +257,7 @@ git push production master
                                         "location": "Espoo3",
                                         "startTime": "2015-02-08 09:30",
                                         "endTime": "2015-02-08 10:30",
+                                        "attendees: ["example@gmail.com"],
                                         "_id": "5613c934b03343196a0b1893"
                                     }`
 
@@ -286,6 +289,7 @@ git push production master
                                                                    "location": "Espoo3",
                                                                    "startTime": "2015-02-08 09:30",
                                                                    "endTime": "2015-02-08 10:30",
+                                                                   "attendees: ["example@gmail.com"],
                                                                    "_id": "5613c934b03343196a0b1893"
                                                                })
       success : function(r) {
@@ -389,6 +393,7 @@ Edit certain event. You can only update certain attribute in the event without n
      `location=[string]`
      `startTime=[ISO 8601 string]`
      `endTime=[ISO 8601 string]`
+     `attendees=[array[email]]`
 
 
 
