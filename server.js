@@ -45,13 +45,17 @@ function getCalendarEventsRoute(eventsCollection) {
   }
 }
 function resolveEventQuery(searchQuery){
-	if(searchQuery){
-		return  {$or : [
-			{'description' : {$regex: searchQuery, $options: 'i'}}, 
-			{'location' : {$regex: searchQuery, $options: 'i'}}, 
-			{$and : [{'startTime' : {$lte: Number(searchQuery) }}, {'endTime' : {$gte: Number(searchQuery)}}]}
-		]};
-	} else {
+  if(searchQuery){
+    const dateQuery = moment(new Date(searchQuery));
+    return dateQuery.isValid() ?
+    {$and : [{'startTime' : {$lte: dateQuery.toDate()}}, {'endTime' : {$gte: dateQuery.toDate()}}]}
+      :
+    {$or : [
+      {'description' : {$regex: searchQuery, $options: 'i'}},
+      {'location' : {$regex: searchQuery, $options: 'i'}}
+    ]}
+
+  } else {
 		return {};
 	}
 }
