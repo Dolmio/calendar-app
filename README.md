@@ -5,6 +5,9 @@ Juho Salmio 217259
 
 Vivien Letonnellier
 
+https://github.com/Dolmio/calendar-app
+
+The API is available at http://130.233.42.155:8080/
 
 # Local Development
 
@@ -44,7 +47,7 @@ Host openstack-echo
 Host openstack-instance
 	ProxyCommand ssh openstack-echo -W %h:%p
 	User INSTANCE-USERNAME
-	HostName 130.233.42.239
+	HostName 130.233.42.155
 ```
 
 You should also configure your ssh-keys to have passwordless access to both openstack-echo and instance.
