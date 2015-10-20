@@ -10,7 +10,10 @@ const calendar = google.calendar('v3');
 function authorize() {
   const credentials = config.getClientSecret();
   const auth = new googleAuth();
-  const oauth2Client = new auth.OAuth2(credentials.installed.client_id, credentials.installed.client_secret, credentials.installed.redirect_uris[0])
+  const oauth2Client = new auth.OAuth2(
+    credentials.installed.client_id,
+    credentials.installed.client_secret,
+    credentials.installed.redirect_uris[0])
 
   oauth2Client.credentials = config.getCalendarApi();
 
