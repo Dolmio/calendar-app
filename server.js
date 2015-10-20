@@ -1,15 +1,15 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const Promise = require('bluebird');
-const MongoDB = Promise.promisifyAll(require('mongodb'));
-const R = require('ramda');
-const validatejs = require('validate.js');
-const moment = require('moment');
-const app = express();
+const express = require('express'),
+      bodyParser = require('body-parser'),
+      Promise = require('bluebird'),
+      MongoDB = Promise.promisifyAll(require('mongodb')),
+      R = require('ramda'),
+      validatejs = require('validate.js'),
+      moment = require('moment'),
+      app = express();
 
-const CalendarEvent = require('./calendarEvent');
-const ValidationErrors = require('./validationErrors');
-const mailSender = require('./mailSender');
+const CalendarEvent = require('./calendarEvent'),
+      ValidationErrors = require('./validationErrors'),
+      mailSender = require('./mailSender');
 
 validatejs.Promise = Promise;
 app.use(bodyParser.json());
