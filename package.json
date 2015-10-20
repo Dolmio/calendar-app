@@ -13,12 +13,13 @@
     "bluebird": "^2.10.0",
     "body-parser": "^1.14.0",
     "express": "^4.13.3",
-    "moment": "^2.10.6",
-    "mongodb": "^2.0.43",
-    "ramda": "^0.17.1",
-    "validate.js": "^0.8.0",
+    "google-auth-library": "^0.9.6",
+    "googleapis": "^2.1.5",
     "moment": "2.10.6",
+    "mongodb": "^2.0.43",
     "nodemailer": "1.8.0",
-    "nodemailer-sendmail-transport" : "1.0.0"
+    "nodemailer-sendmail-transport": "1.0.0",
+    "ramda": "^0.17.1",
+    "validate.js": "^0.8.0"
   }
 }
