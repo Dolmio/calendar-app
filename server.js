@@ -13,6 +13,7 @@ const mailSender = require('./mailSender');
 
 validatejs.Promise = Promise;
 app.use(bodyParser.json());
+app.use(finalErrorHandler);
 
 MongoDB.MongoClient.connectAsync('mongodb://localhost/calendar-app')
   .then((db) => setupRoutes(db))
@@ -38,10 +39,10 @@ function setupRoutes(db) {
 }
 
 function getCalendarEventsRoute(eventsCollection) {
-  return (req, res) => {
+  return (req, res, next) => {
 		eventsCollection.find(resolveEventQuery(req.query.searchQuery)).toArrayAsync()
 		  .then((results) => res.status(200).json(results))
-		  .catch((error) => res.status(500).json(errorToObject(error)))
+		  .catch(next)
   }
 }
 function resolveEventQuery(searchQuery){
@@ -61,11 +62,11 @@ function resolveEventQuery(searchQuery){
 }
 
 function getCalendarEventRoute(eventsCollection) {
-  return (req, res) => {
+  return (req, res, next) => {
     resolveObjectId(req.params.id)
       .then((objectId) => eventsCollection.findOneAsync({_id: objectId}))
       .then((result) => result != null ? res.status(200).json(result) : res.sendStatus(404))
-      .catch((error) => res.status(500).json(errorToObject(error)))
+      .catch(next)
   }
 }
 
@@ -81,7 +82,7 @@ function resolveRecipientsForAttendanceEmail(oldAttendees, newAttendees) {
 }
 
 function createCalendarEventRoute(eventsCollection) {
-  return (req, res) => {
+  return (req, res, next) => {
     validate(req.body, CalendarEvent.constraints)
       .then((validatedData) => eventsCollection.insertAsync(toEventModel(validatedData)))
       .then((result) => {
@@ -90,7 +91,7 @@ function createCalendarEventRoute(eventsCollection) {
         return res.status(201).json(created);
       }  )
       .catch(ValidationErrors, (validationError) => res.status(401).json(validationError.errors))
-      .catch((error) => res.status(500).json(errorToObject(error)))
+      .catch(next)
   }
 }
 
@@ -107,28 +108,32 @@ function editCalendarEventRoute(eventsCollection) {
   }
 
 
-  return (req, res) => {
+  return (req, res, next) => {
     resolveObjectId(req.params.id)
       .then((objectId) => eventsCollection.findOneAsync({_id: objectId}))
       .then((oldEvent) => oldEvent != null ? continueEditing(oldEvent, req, res) : Promise.reject(new NotFoundError()))
       .catch(NotFoundError, () => res.sendStatus(404))
       .catch(ValidationErrors, (validationError) => res.status(400).json(validationError.errors))
-      .catch((error) => res.status(500).json(errorToObject(error)))
+      .catch(next)
   }
 }
 
 function deleteCalendarEventRoute(eventsCollection) {
-  return (req, res) => {
+  return (req, res, next) => {
     resolveObjectId(req.params.id)
     .then((objectId) => eventsCollection.deleteOneAsync({_id: objectId}))
     .then((response) => response.result.n != 0 ? res.status(200).json(response) : res.sendStatus(404))
-    .catch((error) => res.status(500).json(errorToObject(error)))
+    .catch(next)
   }
 }
 
 function toEventModel(data) {
   return R.mapObjIndexed((val, key) => key == "startTime" || key == "endTime" ? moment(val).toDate() : val
     , data)
+}
+
+function finalErrorHandler(err, req, res, next) {
+  res.status(500).json(errorToObject(err))
 }
 
 function errorToObject(error) {
