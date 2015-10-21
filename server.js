@@ -1,27 +1,22 @@
 const express = require('express'),
       bodyParser = require('body-parser'),
       Promise = require('bluebird'),
-      MongoDB = Promise.promisifyAll(require('mongodb')),
       R = require('ramda'),
       validatejs = require('validate.js'),
       moment = require('moment'),
       app = express();
 
-const CalendarEvent = require('./calendarEvent'),
+const db = require('./db'),
+      CalendarEvent = require('./calendarEvent'),
       ValidationErrors = require('./validationErrors'),
-      mailSender = require('./mailSender');
+      mailSender = require('./mailSender'),
+      calendarSync = require('./calendarSync');
 
 validatejs.Promise = Promise;
 app.use(bodyParser.json());
 app.use(finalErrorHandler);
 
-MongoDB.MongoClient.connectAsync('mongodb://localhost/calendar-app')
-  .then((db) => setupRoutes(db))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1)
-  }
-);
+db.connection.then((db) => setupRoutes(db));
 
 const server  = app.listen(8080, function () {
   console.log('Server listening in port', server.address().port);
