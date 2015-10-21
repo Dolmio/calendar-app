@@ -31,6 +31,7 @@ function setupRoutes(db) {
   app.post('/event', createCalendarEventRoute(calendarEventsCollection));
   app.put('/event/:id', editCalendarEventRoute(calendarEventsCollection));
   app.delete('/event/:id', deleteCalendarEventRoute(calendarEventsCollection));
+  app.post('/sync-from', getCalendarSyncFromRoute(calendarEventsCollection));
 }
 
 function getCalendarEventsRoute(eventsCollection) {
@@ -119,6 +120,14 @@ function deleteCalendarEventRoute(eventsCollection) {
     .then((objectId) => eventsCollection.deleteOneAsync({_id: objectId}))
     .then((response) => response.result.n != 0 ? res.status(200).json(response) : res.sendStatus(404))
     .catch(next)
+  }
+}
+
+function getCalendarSyncFromRoute(eventsCollection) {
+  return (req, res, next) => {
+    calendarSync.syncFromGoogle(eventsCollection)
+      .then((results) => res.status(200).json(results))
+      .catch(next)
   }
 }
 

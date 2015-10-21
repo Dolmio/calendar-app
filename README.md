@@ -19,6 +19,7 @@ Install nodejs from https://nodejs.org/en/download/ (Requires atleast version 4)
 git clone https://github.com/Dolmio/calendar-app.git
 cd calendar-app
 npm install
+cp sample-environment.json environment.json #fill required secrets to environment.json (google calendar)
 npm start
 Profit!
 ```
