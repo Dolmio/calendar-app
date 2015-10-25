@@ -4,6 +4,7 @@ const express = require('express'),
       R = require('ramda'),
       validatejs = require('validate.js'),
       moment = require('moment'),
+      MongoDB = require('mongodb'),
       app = express();
 
 const db = require('./db'),
