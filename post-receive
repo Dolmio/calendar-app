@@ -44,7 +44,7 @@ export DEPLOY_ALLOWED_BRANCH="master"
 
 # Use this to do update tasks and maybe service restarts
 # If you need this just delete the comment and modify to your needs
-POST_UPDATE_CMD='cd ${DEPLOY_ROOT} && npm install && sudo service calendar-app restart'
+POST_UPDATE_CMD='cp ${HOME}/environment.json ${DEPLOY_ROOT} && cd ${DEPLOY_ROOT} && npm install && sudo service calendar-app restart'
 
 ###########################################################################################
 
