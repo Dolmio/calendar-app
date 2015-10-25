@@ -18,5 +18,10 @@
       ]
     }
 
+  },
+
+  "mailAuth": {
+    "user": "username",
+    "pass": "password"
   }
 }

@@ -18,7 +18,7 @@
     "moment": "2.10.6",
     "mongodb": "^2.0.43",
     "nodemailer": "1.8.0",
-    "nodemailer-sendmail-transport": "1.0.0",
+    "nodemailer-smtp-transport": "^1.0.3",
     "ramda": "^0.17.1",
     "validate.js": "^0.8.0"
   }

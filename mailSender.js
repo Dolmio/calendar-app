@@ -1,6 +1,13 @@
 const nodemailer = require('nodemailer');
-const sendmailTransport = require('nodemailer-sendmail-transport');
-const transporter = nodemailer.createTransport(sendmailTransport());
+const smtpTransport = require('nodemailer-smtp-transport');
+const config = require('./config');
+const transporter = nodemailer.createTransport(smtpTransport({
+  service: 'gmail',
+  auth: {
+    user: config.mailAuth.user,
+    pass: config.mailAuth.pass
+  }
+}));
 
 function sendAttendanceMail(event, recipients) {
   console.log("Sending email to: " + recipients)
