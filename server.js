@@ -38,8 +38,9 @@ function setupRoutes(db) {
 function getCalendarEventsRoute(eventsCollection) {
   return (req, res, next) => {
 		eventsCollection.find(resolveEventQuery(req.query.searchQuery)).toArrayAsync()
-		  .then((results) => res.status(200).json(results))
+		  .then((results) => res.render('calendar.ejs',{events: JSON.stringify(results)}))
 		  .catch(next)
+		  
   }
 }
 function resolveEventQuery(searchQuery){
