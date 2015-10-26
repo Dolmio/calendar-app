@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Calendar</title>
+		<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+		<script src="//code.jquery.com/jquery-1.10.2.js"></script>
+		<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+		<style>
+			body{
+			background-color:#ddd;
+			padding:0px;
+			margin:0px;
+			}
+			#popup {
+			width:350px;
+			height:250px;
+			position:fixed;
+			background-color:white;
+			border:1px solid #e0e0e0;
+			-webkit-box-shadow: 0px 0px 11px 0px rgba(230,230,230,1);
+			-moz-box-shadow: 0px 0px 11px 0px rgba(230,230,230,1);
+			box-shadow: 0px 0px 11px 0px rgba(230,230,230,1);
+			z-index:1500;
+			padding:20px;
+			text-align:center;
+			}
+			.top {
+			color:#555;
+			font-family:calibri;arial;
+			font-size:30px;
+			padding:20px 50px;
+			text-align:left;
+			}
+			.mainTable {
+			margin:0 auto;
+			width:80%;
+			text-align:center;
+			border-collapse:collapse;
+			}
+			.secTable {
+			margin:0 auto;
+			width:80%;
+			text-align:left;
+			}
+			#functionTable {
+			margin:0 auto;
+			width:80%;
+			text-align:center;
+			border-collapse:collapse;
+			}
+			.mainCell {
+			padding:30px 10px;
+			color:#888;
+			font-size:24px;
+			border:1px solid #ddd;
+			background-color:#fff;
+			}
+			.secCell {
+			padding:5px 5px;
+			margin-right:10px;
+			width:100px;
+			color:#333;
+			float:left;
+			display:block;
+			background-color:#ddd;
+			text-align:right;
+			}
+			.event {
+			padding:20px 10px;
+			color:#333;
+			font-size:16px;
+			border:1px solid #ddd;
+			background-color:#fff;
+			}
+			.mainCellNext {
+			padding:30px 10px;
+			color:#888;
+			font-size:24px;
+			border:1px solid #ddd;
+			background-color:#bbb;
+			}
+			.mainCellEvent {
+			padding:30px 10px;
+			color:#fff;
+			font-size:24px;
+			border:1px solid #ddd;
+			background-color:#00B4FF;
+			}
+			.functionCell {
+			padding:30px 10px;
+			color:#000;
+			font-size:24px;
+			background-color:#fff;
+			border:1px solid #ddd;
+			}
+			.bouton_style {
+			display:inline;
+			padding: 10px 25px;
+			margin:0px;
+			background-color:white;
+			font-size:18px;
+			font-family: calibri;
+			border:none;
+			}
+			.bouton_style:hover {
+			background-color:#f0f0f0;
+			}
+			.bouton_style:active {
+			background-color:#e0e0e0;
+			}
+			.bouton_style:focus {
+			outline: none;
+			}
+			#map_canvas {
+			height: 100%;
+			}
+		</style>
+		
+		<script>
+			$(function() {
+				$( "#datepicker1" ).datepicker({ dateFormat: 'yy-mm-dd' });
+				$( "#datepicker2" ).datepicker({ dateFormat: 'yy-mm-dd' });
+			});
+			var html="<div class='secTable'>";
+			var jsonData = <%- JSON.stringify(events) %>;
+			var id = "";
+			var dayWithEvents = [];
+			var temp = [],verif = [];
+			var dateNowJS = new Date();
+			var monthJS = dateNowJS.getMonth();
+			var upDescEvent = "", upLocEvent = "";
+			$(jsonData).each(function(i,val){
+				html += "<div class='event'>";
+				$.each(val,function(k,v){
+					if(k == "_id") { id  = v; html+="<div style='float:right;margin:10px;'><input type='button' class='bouton_style' style='color:#888;padding:5px;font-size:12px;' value='Delete' onclick=\"delEvent('"+id+"');\"/></div>";
+					} else if (k == "description"){ 
+						upDescEvent = v;
+					} else if (k == "location"){ 
+						upLocEvent = v;
+						html+="<div style='float:right;margin:10px;'><input type='button' class='bouton_style' style='color:#888;padding:5px;font-size:12px;' value='Update' onclick=\"openWindow2('"+id+"','"+upDescEvent+"','"+upLocEvent+"');\"/></div>";
+					} else if (k == "startTime" || k == "endTime") {
+						temp = v.toString().split("T"); 
+						temp = temp[0].split("-");
+						verif = temp[2].split("");
+						if(temp[1] == (monthJS+1)) {
+							if(verif[0] == "0") {
+								dayWithEvents.push(verif[1]);
+							} else {
+								dayWithEvents.push(temp[2]);
+							}
+						}
+					}
+					html += "<div class='secCell'>"+k+"</div><div style='padding:5px;'>"+v+"</div>";   
+				});
+				html += "</div>";
+			});
+			html += "</div>";
+
+		</script>
+    </head>
+    <body>
+	<% 	var json = JSON.stringify(events)
+		var dateNow = new Date();
+		var month = dateNow.getMonth();
+		var tableDay =[31,29,31,30,31,30,31,31,30,31,30,31]; %>
+
+		<div id="popup" style="display:none;">
+			<h3 id="popup_titre" style="margin:0px;"></h3>
+			<div id="popup_contenu"></div>
+		</div>
+		<div class="top">
+			Calendar
+			<div style="float:right;">
+				<form method="get" action="/event">
+					<input type="button" class="bouton_style" style="color:#888;margin:0px;" value="Add" onclick="openWindow(2,0)" />
+					<input type="submit" class="bouton_style" style="color:#888;margin:0px;" value="Synchronize"/>
+				</form>
+			</div>
+		</div>
+		<div id="corps">
+			<center>
+				<table id="functionTable">
+					<tr>
+						<td class="mainCell" id="setMonth"></td>
+					</tr>
+				</table>
+	    		<table class='mainTable'>
+		  			<% for(var i = 0 ; i < 5 ; i++) { %>
+					<tr>
+						<% for(var j = 1 ; j <= 7 ; j++) { 
+							if(7*i+j <= tableDay[month]) { %>
+						<td class="mainCell" id="cell<%= 7*i+j %>" onclick="openWindow(1,<%= 7*i+j %>);"><%= 7*i+j %></td> 
+						<% } else { %>
+						<td class="mainCellNext"><%= (7*i+j)-tableDay[month] %></td> 
+						<% }} %>
+					</tr>
+					<% } %>
+				</table>
+				<div class="top">List of events
+					<div style="float:right;">
+						<form method="get" id="anchor1" action="/event#anchor1">
+							<input type="text" name="searchQuery" class="bouton_style" style="text-align:left;margin:0px;" placeholder="Search" required/>
+							<input type="submit" class="bouton_style" style="color:#888;margin:0px;" value="Find" />
+						</form>
+					</div>
+				</div>
+				<div id="donnees" style="margin:20px 0px 30px 0px;"></div>
+			</center>
+		</div>
+		<script> 
+			for(var i=0; i<dayWithEvents.length; i++) {
+				document.getElementById('cell'+dayWithEvents[i]).className = "mainCellEvent";
+			}
+			document.getElementById('donnees').innerHTML = html;
+			
+			var dateNow = new Date();
+			var month = dateNow.getMonth();
+			var tableMonth = ["Jan.","Feb.","Mar.","Apr.","May","Jun.","Jul.","Aug.","Sep.","Oct.","Nov.","Dec."];
+			for(var i=0;i<tableMonth.length;i++) {
+				if(i==month) {	
+					document.getElementById('setMonth').innerHTML = tableMonth[i];
+				}
+			}
+
+			var selected = 0;
+			var pos_top = (window.innerHeight / 2) - 40 - 125;
+			var pos_left = (window.innerWidth / 2) - 40 - 175;
+
+			function openWindow(i,day) {
+				if(i == 1) { // click no event > add
+					document.getElementById('popup').setAttribute('style', 'top:'+pos_top+'px;left:'+pos_left+'px;display:block;');
+					document.getElementById('popup_titre').innerHTML = day +'/'+ (month+1) + " Add an event";
+					document.getElementById('popup_contenu').innerHTML = '<br /><input type="text" name="nameEvent" class="bouton_style" style="text-align:center;" id="addField1" placeholder="Name your event here" required/>'+
+					'<br />Start <input type="text" class="bouton_style" id="datepicker1" style="text-align:center;width:100px;" value="'+dateNow.getFullYear()+'-'+(dateNow.getMonth()+1)+'-'+day+'" /><input type="text" name="dateEvent" class="bouton_style" id="hourpicker1" style="text-align:center;width:75px;" placeholder="hh:mm" required/><br />'+
+					'End <input type="text" class="bouton_style" id="datepicker2" style="text-align:center;width:100px;" value="'+dateNow.getFullYear()+'-'+(dateNow.getMonth()+1)+'-'+day+'" /><input type="text" name="dateEvent" class="bouton_style" id="hourpicker2" style="text-align:center;width:75px;" placeholder="hh:mm" required/><br />'+
+					'<input type="text" name="locationEvent" class="bouton_style" style="text-align:center;" id="addField2" placeholder="Location" required/><br />'+
+					'<input type="submit" class="bouton_style" value="Add" onclick="addEvent(document.getElementById(\'addField1\').value,document.getElementById(\'addField2\').value,document.getElementById(\'datepicker1\').value+\' \'+document.getElementById(\'hourpicker1\').value,'+
+					'document.getElementById(\'datepicker2\').value+\' \'+document.getElementById(\'hourpicker2\').value);openWindow(0,0);"/>'+
+					'<input type="button" class="bouton_style" value="Cancel" onclick="openWindow(0,0);"/>';
+					$(function() {
+						$( "#datepicker1" ).datepicker({ dateFormat: 'yy-mm-dd' });
+						$( "#datepicker2" ).datepicker({ dateFormat: 'yy-mm-dd' });
+					});
+				} else if(i == 2) { // just add
+					document.getElementById('popup').setAttribute('style', 'top:'+pos_top+'px;left:'+pos_left+'px;display:block;');
+					document.getElementById('popup_titre').innerHTML = "Add an event";
+					document.getElementById('popup_contenu').innerHTML = '<br /><input type="text" name="nameEvent" class="bouton_style" style="text-align:center;" id="addField1" placeholder="Name your event here" required/>'+
+					'<br />Start <input type="text" class="bouton_style" id="datepicker1" style="text-align:center;width:100px;" placeholder="yyyy-mm-dd" /><input type="text" name="dateEvent" class="bouton_style" id="hourpicker1" style="text-align:center;width:75px;" placeholder="hh:mm" required/><br />'+
+					'End <input type="text" class="bouton_style" id="datepicker2" style="text-align:center;width:100px;" placeholder="yyyy-mm-dd" /><input type="text" name="dateEvent" class="bouton_style" id="hourpicker2" style="text-align:center;width:75px;" placeholder="hh:mm" required/><br />'+
+					'<input type="text" name="locationEvent" class="bouton_style" style="text-align:center;" id="addField2" placeholder="Location" required/><br />'+
+					'<input type="submit" class="bouton_style" value="Add" onclick="addEvent(document.getElementById(\'addField1\').value,document.getElementById(\'addField2\').value,document.getElementById(\'datepicker1\').value+\' \'+document.getElementById(\'hourpicker1\').value,'+
+					'document.getElementById(\'datepicker2\').value+\' \'+document.getElementById(\'hourpicker2\').value);openWindow(0,0);"/>'+
+					'<input type="button" class="bouton_style" value="Cancel" onclick="openWindow(0,0);"/>';
+					$(function() {
+						$( "#datepicker1" ).datepicker({ dateFormat: 'yy-mm-dd' });
+						$( "#datepicker2" ).datepicker({ dateFormat: 'yy-mm-dd' });
+					});
+				} else if(i == 3) { // event > select action
+					document.getElementById('popup').setAttribute('style', 'top:'+pos_top+'px;left:'+pos_left+'px;display:block;');
+					document.getElementById('popup_titre').innerHTML = day +'/'+ (month+1);
+					document.getElementById('popup_contenu').innerHTML = '<br /><br /><input type="button" class="bouton_style" value="Add an event" onclick="openWindow(0);"/><br /><input type="button" class="bouton_style" value="Delete" onclick="openWindow(0);"/>';
+				} else { // close popup
+					document.getElementById('popup').setAttribute('style', 'display:none;');
+				}
+			}
+			function openWindow2(id,desc,loc) {
+				document.getElementById('popup').setAttribute('style', 'top:'+pos_top+'px;left:'+pos_left+'px;display:block;');
+				document.getElementById('popup_titre').innerHTML = "Update an event";
+				document.getElementById('popup_contenu').innerHTML = '<br /><input type="text" name="nameEvent" class="bouton_style" style="text-align:center;" id="addField1" value="'+desc+'" required/>'+
+				'<br />Start <input type="text" class="bouton_style" id="datepicker1" style="text-align:center;width:100px;" placeholder="yyyy-mm-dd" /><input type="text" name="dateEvent" class="bouton_style" id="hourpicker1" style="text-align:center;width:75px;" placeholder="hh:mm" required/><br />'+
+				'End <input type="text" class="bouton_style" id="datepicker2" style="text-align:center;width:100px;" placeholder="yyyy-mm-dd" /><input type="text" name="dateEvent" class="bouton_style" id="hourpicker2" style="text-align:center;width:75px;" placeholder="hh:mm" required/><br />'+
+				'<input type="text" name="locationEvent" class="bouton_style" style="text-align:center;" id="addField2" value="'+loc+'" required/><br />'+
+				'<input type="submit" class="bouton_style" value="Update" onclick="updateEvent(\''+id+'\',document.getElementById(\'addField1\').value,document.getElementById(\'addField2\').value,document.getElementById(\'datepicker1\').value+\' \'+document.getElementById(\'hourpicker1\').value,'+
+				'document.getElementById(\'datepicker2\').value+\' \'+document.getElementById(\'hourpicker2\').value);openWindow(0,0);"/>'+
+				'<input type="button" class="bouton_style" value="Cancel" onclick="openWindow(0,0);"/>';
+				$(function() {
+					$( "#datepicker1" ).datepicker({ dateFormat: 'yy-mm-dd' });
+					$( "#datepicker2" ).datepicker({ dateFormat: 'yy-mm-dd' });
+				});
+			}
+
+			function addEvent(description,location,startTime,endTime) {	/*PROBLEM : Send empty data*/
+				$.ajax({
+					url: "/event/",
+					dataType: "json",
+					ContentType : 'application/json',
+					type : "POST",
+					data: JSON.stringify({
+						"description": description,
+						"location": location,
+						"startTime": startTime,
+						"endTime": endTime,
+						"attendees" : ["example@gmail.com"]}),
+					success : function(r) {
+					  alert("Event added : "+description);
+					}
+				})
+			}
+
+			function delEvent(id) {
+			  $.ajax({
+				url: "/event/"+id,
+				dataType: "json",
+				type : "DELETE",
+				success : function(r) {
+				  alert("Event deleted : "+id);
+				  console.log(r);
+				}
+			  });
+			}		
+
+			function updateEvent(id,description,location,startTime,endTime) {
+			  $.ajax({
+				url: "/event/"+id,
+				dataType: "json",
+				type : "PUT",
+				data: JSON.stringify({
+					"description": description,
+					"location": location,
+					"startTime": startTime,
+					"endTime": endTime,
+					"attendees" : ["example@gmail.com"]}),
+				success : function(r) {
+				  alert("Event updated : "+id);
+				  console.log(r);
+				}
+			  });
+			}	
+		</script>
+    </body>
+</html>
+
+
+
