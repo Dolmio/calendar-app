@@ -19,7 +19,7 @@ app.use(finalErrorHandler);
 
 db.connection.then((db) => setupRoutes(db));
 
-const server  = app.listen(8080, function () {
+const server  = app.listen(8081, function () {
   console.log('Server listening in port', server.address().port);
 });
 
@@ -38,7 +38,7 @@ function setupRoutes(db) {
 function getCalendarEventsRoute(eventsCollection) {
   return (req, res, next) => {
 		eventsCollection.find(resolveEventQuery(req.query.searchQuery)).toArrayAsync()
-		  .then((results) => res.render('calendar.ejs',{events: JSON.stringify(results)}))
+		  .then((results) => res.json(results))
 		  .catch(next)
 		  
   }
