@@ -33,6 +33,7 @@ function setupRoutes(db) {
   app.put('/event/:id', editCalendarEventRoute(calendarEventsCollection));
   app.delete('/event/:id', deleteCalendarEventRoute(calendarEventsCollection));
   app.post('/sync-from', getCalendarSyncFromRoute(calendarEventsCollection));
+  app.post('/sync-to', getCalendarSyncToRoute(calendarEventsCollection))
 }
 
 function getCalendarEventsRoute(eventsCollection) {
@@ -128,6 +129,14 @@ function deleteCalendarEventRoute(eventsCollection) {
 function getCalendarSyncFromRoute(eventsCollection) {
   return (req, res, next) => {
     calendarSync.syncFromGoogle(eventsCollection)
+      .then((results) => res.status(200).json(results))
+      .catch(next)
+  }
+}
+
+function getCalendarSyncToRoute(eventsCollection) {
+  return (req, res, next) => {
+    calendarSync.syncToGoogle(eventsCollection)
       .then((results) => res.status(200).json(results))
       .catch(next)
   }
