@@ -282,9 +282,9 @@
 
 			function addEvent(description,location,startTime,endTime) {	/*PROBLEM : Send empty data*/
 				$.ajax({
-					url: "/event/",
+					url: "api/event/",
 					dataType: "json",
-					ContentType : 'application/json',
+					contentType : 'application/json',
 					type : "POST",
 					data: JSON.stringify({
 						"description": description,
@@ -293,27 +293,33 @@
 						"endTime": endTime,
 						"attendees" : ["example@gmail.com"]}),
 					success : function(r) {
-					  alert("Event added : "+description);
-					}
+					  window.location.reload(true);
+					},
+                    error: function(response) {
+                        alert("Creation failed: " + JSON.stringify( response.responseJSON))
+                    }
 				})
 			}
 
 			function delEvent(id) {
 			  $.ajax({
-				url: "/event/"+id,
+				url: "api/event/"+id,
 				dataType: "json",
 				type : "DELETE",
 				success : function(r) {
-				  alert("Event deleted : "+id);
-				  console.log(r);
-				}
+                    window.location.reload(true)
+				},
+              error: function(response) {
+                  alert("Delete failed: " + JSON.stringify( response.responseJSON))
+              }
 			  });
-			}		
+			}
 
 			function updateEvent(id,description,location,startTime,endTime) {
-			  $.ajax({
-				url: "/event/"+id,
+                $.ajax({
+				url: "api/event/"+id,
 				dataType: "json",
+                contentType: "application/json",
 				type : "PUT",
 				data: JSON.stringify({
 					"description": description,
@@ -322,9 +328,11 @@
 					"endTime": endTime,
 					"attendees" : ["example@gmail.com"]}),
 				success : function(r) {
-				  alert("Event updated : "+id);
-				  console.log(r);
-				}
+                    window.location.reload(true)
+				},
+                error: function(response) {
+                    alert("Update failed: " + JSON.stringify(response.responseJSON));
+                }
 			  });
 			}	
 		</script>
