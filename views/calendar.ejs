@@ -122,48 +122,68 @@
 				$( "#datepicker1" ).datepicker({ dateFormat: 'yy-mm-dd' });
 				$( "#datepicker2" ).datepicker({ dateFormat: 'yy-mm-dd' });
 			});
-			var html="<div class='secTable'>";
+			var html="";
 			var jsonData = <%- events %>;
 			var id = "";
 			var dayWithEvents = [];
 			var temp = [],verif = [];
 			var dateNowJS = new Date();
 			var monthJS = dateNowJS.getMonth();
-			var upDescEvent = "", upLocEvent = "";
-			$(jsonData).each(function(i,val){
-				html += "<div class='event'>";
-				$.each(val,function(k,v){
-					if(k == "_id") { id  = v; html+="<div style='float:right;margin:10px;'><input type='button' class='bouton_style' style='color:#888;padding:5px;font-size:12px;' value='Delete' onclick=\"delEvent('"+id+"');\"/></div>";
-					} else if (k == "description"){ 
-						upDescEvent = v;
-					} else if (k == "location"){ 
-						upLocEvent = v;
-						html+="<div style='float:right;margin:10px;'><input type='button' class='bouton_style' style='color:#888;padding:5px;font-size:12px;' value='Update' onclick=\"openWindow2('"+id+"','"+upDescEvent+"','"+upLocEvent+"');\"/></div>";
-					} else if (k == "startTime" || k == "endTime") {
-						temp = v.toString().split("T"); 
-						temp = temp[0].split("-");
-						verif = temp[2].split("");
-						if(temp[1] == (monthJS+1)) {
-							if(verif[0] == "0") {
-								dayWithEvents.push(verif[1]);
-							} else {
-								dayWithEvents.push(temp[2]);
+			var upDescEvent = "", upLocEvent = "", upStartDate = "", upStartHour = "", upEndDate = "", upEndHour = "";
+			
+			function loadEvents(eventsInJson, monthJSVar) {
+				dayWithEvents = [];
+				html="<div class='secTable'>";
+				$(eventsInJson).each(function(i,val){
+					html += "<div class='event'>";
+					$.each(val,function(k,v){
+						if(k == "_id") { 
+							id  = v; 
+						} else if (k == "description"){ 
+							upDescEvent = v;
+						} else if (k == "location"){ 
+							upLocEvent = v;
+						} else if (k == "startTime" || k == "endTime") {
+							temp = v.toString().split("T"); 
+							temp = temp[0].split("-");
+							verif = temp[2].split("");
+							if(temp[1] == (monthJSVar+1)) {
+								if(verif[0] == "0") {
+									dayWithEvents.push(verif[1]);
+								} else {
+									dayWithEvents.push(temp[2]);
+								}
 							}
 						}
-					}
-					html += "<div class='secCell'>"+k+"</div><div style='padding:5px;'>"+v+"</div>";   
+						if(k == "startTime") {
+							temp = v.toString().split("T"); 
+							upStartDate = temp[0];
+							temp = temp[1].toString().split(":"); 
+							upStartHour = temp[0] + ":" + temp[1];
+						}
+						if(k == "endTime") {
+							temp = v.toString().split("T"); 
+							upEndDate = temp[0];
+							temp = temp[1].toString().split(":"); 
+							upEndHour = temp[0] + ":" + temp[1];
+							
+							html+="<div style='float:right;margin:10px;'><input type='button' class='bouton_style' style='color:#888;padding:5px;font-size:12px;' value='Delete' onclick=\"delEvent('"+id+"');\"/></div>";
+							html+="<div style='float:right;margin:10px;'><input type='button' class='bouton_style' style='color:#888;padding:5px;font-size:12px;' value='Update' onclick=\"openWindow2('"+id+"','"+upDescEvent+"','"+upLocEvent+"','"+upStartDate+"','"+upStartHour+"','"+upEndDate+"','"+upEndHour+"');\"/></div>";
+						}
+						html += "<div class='secCell'>"+k+"</div><div style='padding:5px;'>"+v+"</div>";   
+					});
+					html += "</div>";
 				});
 				html += "</div>";
-			});
-			html += "</div>";
+				return dayWithEvents;
+			}
 
+			loadEvents(jsonData,monthJS);
+			
+			
 		</script>
     </head>
     <body>
-	<%
-		var dateNow = new Date();
-		var month = dateNow.getMonth();
-		var tableDay =[31,29,31,30,31,30,31,31,30,31,30,31]; %>
 
 		<div id="popup" style="display:none;">
 			<h3 id="popup_titre" style="margin:0px;"></h3>
@@ -174,7 +194,8 @@
 			<div style="float:right;">
 				<form method="get" action="/event">
 					<input type="button" class="bouton_style" style="color:#888;margin:0px;" value="Add" onclick="openWindow(2,0)" />
-					<input type="submit" class="bouton_style" style="color:#888;margin:0px;" value="Synchronize"/>
+					<input type="submit" class="bouton_style" style="color:#888;margin:0px;" value="Sync. to Google" onclick="syncTo();" />
+					<input type="submit" class="bouton_style" style="color:#888;margin:0px;" value="Sync. from Google" onclick="syncFrom();" />
 				</form>
 			</div>
 		</div>
@@ -185,44 +206,67 @@
 						<td class="mainCell" id="setMonth"></td>
 					</tr>
 				</table>
-	    		<table class='mainTable'>
-		  			<% for(var i = 0 ; i < 5 ; i++) { %>
-					<tr>
-						<% for(var j = 1 ; j <= 7 ; j++) { 
-							if(7*i+j <= tableDay[month]) { %>
-						<td class="mainCell" id="cell<%= 7*i+j %>" onclick="openWindow(1,<%= 7*i+j %>);"><%= 7*i+j %></td> 
-						<% } else { %>
-						<td class="mainCellNext"><%= (7*i+j)-tableDay[month] %></td> 
-						<% }} %>
-					</tr>
-					<% } %>
+	    		<table class='mainTable' id="mainCalendar">
 				</table>
 				<div class="top">List of events
 					<div style="float:right;">
-						<form method="get" id="anchor1" action="/event#anchor1">
-							<input type="text" name="searchQuery" class="bouton_style" style="text-align:left;margin:0px;" placeholder="Search" required/>
-							<input type="submit" class="bouton_style" style="color:#888;margin:0px;" value="Find" />
-						</form>
+						<input type="text" name="searchQuery" id="searchBar" class="bouton_style" style="text-align:left;margin:0px;" placeholder="Search" required/>
+						<input type="button" class="bouton_style" style="color:#888;margin:0px;" value="Find" onclick="findEvent(document.getElementById('searchBar').value);"/>
 					</div>
 				</div>
 				<div id="donnees" style="margin:20px 0px 30px 0px;"></div>
 			</center>
 		</div>
 		<script> 
-			for(var i=0; i<dayWithEvents.length; i++) {
-				document.getElementById('cell'+dayWithEvents[i]).className = "mainCellEvent";
+			
+			function showEvents() {
+				document.getElementById('donnees').innerHTML = html;
 			}
-			document.getElementById('donnees').innerHTML = html;
+			
+			showEvents();
 			
 			var dateNow = new Date();
 			var month = dateNow.getMonth();
+			var year = dateNow.getFullYear();
 			var tableMonth = ["Jan.","Feb.","Mar.","Apr.","May","Jun.","Jul.","Aug.","Sep.","Oct.","Nov.","Dec."];
-			for(var i=0;i<tableMonth.length;i++) {
-				if(i==month) {	
-					document.getElementById('setMonth').innerHTML = tableMonth[i];
+			var tableDay =[31,29,31,30,31,30,31,31,30,31,30,31];
+			
+			function getCalendar(showMonth,showYear,operation) {
+				var html2 = "";
+				showMonth = showMonth + operation;
+				if(showMonth < 0) { showYear -= 1; showMonth = 11; }
+				if(showMonth > 11) { showYear += 1; showMonth = 0; }
+
+				for(var i=0;i<tableMonth.length;i++) {
+					if(i==showMonth) {	
+						document.getElementById('setMonth').innerHTML = "<input type='button' class='bouton_style' style='float:left;' value='<' onclick='getCalendar("+showMonth+","+showYear+",-1);' />" + tableMonth[i] + "<input type='button' class='bouton_style' style='float:right;' value='>' onclick='getCalendar("+showMonth+","+showYear+",1);' />";
+					}
+				}
+				
+				for(var i = 0 ; i < 5 ; i++) {
+					html2 += "<tr>";
+					for(var j = 1 ; j <= 7 ; j++) {
+						if(7*i+j <= tableDay[showMonth]) {
+							html2 += "<td class='mainCell' id='cell"+ (7*i+j) +"' onclick='openWindow(1,"+ (7*i+j) +");'>"+ (7*i+j) +"</td>";
+						} else {
+							html2 += "<td class='mainCellNext'>"+ ((7*i+j)-tableDay[showMonth]) +"</td>";
+						}
+					}
+					html2 += "</tr>";
+				}
+				document.getElementById('mainCalendar').innerHTML = html2;
+				var dayWithEvents = loadEvents(jsonData, showMonth);
+				colorDayWithEvents(dayWithEvents);
+			}
+			getCalendar(month,year,0);
+			
+			function colorDayWithEvents(dayWithEventsVar) {
+				for(var i=0; i<dayWithEventsVar.length; i++) {
+					document.getElementById('cell'+dayWithEventsVar[i]).className = "mainCellEvent";
 				}
 			}
-
+			colorDayWithEvents(dayWithEvents);
+			
 			var selected = 0;
 			var pos_top = (window.innerHeight / 2) - 40 - 125;
 			var pos_left = (window.innerWidth / 2) - 40 - 175;
@@ -232,8 +276,8 @@
 					document.getElementById('popup').setAttribute('style', 'top:'+pos_top+'px;left:'+pos_left+'px;display:block;');
 					document.getElementById('popup_titre').innerHTML = day +'/'+ (month+1) + " Add an event";
 					document.getElementById('popup_contenu').innerHTML = '<br /><input type="text" name="nameEvent" class="bouton_style" style="text-align:center;" id="addField1" placeholder="Name your event here" required/>'+
-					'<br />Start <input type="text" class="bouton_style" id="datepicker1" style="text-align:center;width:100px;" value="'+dateNow.getFullYear()+'-'+(dateNow.getMonth()+1)+'-'+day+'" /><input type="text" name="dateEvent" class="bouton_style" id="hourpicker1" style="text-align:center;width:75px;" placeholder="hh:mm" required/><br />'+
-					'End <input type="text" class="bouton_style" id="datepicker2" style="text-align:center;width:100px;" value="'+dateNow.getFullYear()+'-'+(dateNow.getMonth()+1)+'-'+day+'" /><input type="text" name="dateEvent" class="bouton_style" id="hourpicker2" style="text-align:center;width:75px;" placeholder="hh:mm" required/><br />'+
+					'<br />Start <input type="text" class="bouton_style" id="datepicker1" style="text-align:center;width:100px;" value="'+year+'-'+(month+1)+'-'+day+'" /><input type="text" name="dateEvent" class="bouton_style" id="hourpicker1" style="text-align:center;width:75px;" placeholder="hh:mm" required/><br />'+
+					'End <input type="text" class="bouton_style" id="datepicker2" style="text-align:center;width:100px;" value="'+year+'-'+(month+1)+'-'+day+'" /><input type="text" name="dateEvent" class="bouton_style" id="hourpicker2" style="text-align:center;width:75px;" placeholder="hh:mm" required/><br />'+
 					'<input type="text" name="locationEvent" class="bouton_style" style="text-align:center;" id="addField2" placeholder="Location" required/><br />'+
 					'<input type="submit" class="bouton_style" value="Add" onclick="addEvent(document.getElementById(\'addField1\').value,document.getElementById(\'addField2\').value,document.getElementById(\'datepicker1\').value+\' \'+document.getElementById(\'hourpicker1\').value,'+
 					'document.getElementById(\'datepicker2\').value+\' \'+document.getElementById(\'hourpicker2\').value);openWindow(0,0);"/>'+
@@ -264,12 +308,12 @@
 					document.getElementById('popup').setAttribute('style', 'display:none;');
 				}
 			}
-			function openWindow2(id,desc,loc) {
+			function openWindow2(id,desc,loc,date1,hour1,date2,hour2) {
 				document.getElementById('popup').setAttribute('style', 'top:'+pos_top+'px;left:'+pos_left+'px;display:block;');
 				document.getElementById('popup_titre').innerHTML = "Update an event";
 				document.getElementById('popup_contenu').innerHTML = '<br /><input type="text" name="nameEvent" class="bouton_style" style="text-align:center;" id="addField1" value="'+desc+'" required/>'+
-				'<br />Start <input type="text" class="bouton_style" id="datepicker1" style="text-align:center;width:100px;" placeholder="yyyy-mm-dd" /><input type="text" name="dateEvent" class="bouton_style" id="hourpicker1" style="text-align:center;width:75px;" placeholder="hh:mm" required/><br />'+
-				'End <input type="text" class="bouton_style" id="datepicker2" style="text-align:center;width:100px;" placeholder="yyyy-mm-dd" /><input type="text" name="dateEvent" class="bouton_style" id="hourpicker2" style="text-align:center;width:75px;" placeholder="hh:mm" required/><br />'+
+				'<br />Start <input type="text" class="bouton_style" id="datepicker1" style="text-align:center;width:100px;" value="'+date1+'" /><input type="text" name="dateEvent" class="bouton_style" id="hourpicker1" style="text-align:center;width:75px;" value="'+hour1+'" required/><br />'+
+				'End <input type="text" class="bouton_style" id="datepicker2" style="text-align:center;width:100px;" value="'+date2+'" /><input type="text" name="dateEvent" class="bouton_style" id="hourpicker2" style="text-align:center;width:75px;" value="'+hour2+'" required/><br />'+
 				'<input type="text" name="locationEvent" class="bouton_style" style="text-align:center;" id="addField2" value="'+loc+'" required/><br />'+
 				'<input type="submit" class="bouton_style" value="Update" onclick="updateEvent(\''+id+'\',document.getElementById(\'addField1\').value,document.getElementById(\'addField2\').value,document.getElementById(\'datepicker1\').value+\' \'+document.getElementById(\'hourpicker1\').value,'+
 				'document.getElementById(\'datepicker2\').value+\' \'+document.getElementById(\'hourpicker2\').value);openWindow(0,0);"/>'+
@@ -335,6 +379,53 @@
                 }
 			  });
 			}	
+			
+			function findEvent(value) {
+				$.ajax({
+				url: "api/event?searchQuery="+value,
+				dataType: "json",
+                contentType: "application/json",
+				type : "GET",
+				success : function(r) {
+                    loadEvents(r);
+					showEvents();
+				},
+                error: function(response) {
+                    alert("Search failed: " + JSON.stringify(response.responseJSON));
+                }
+			  });
+			}
+			
+			function syncTo() {
+				$.ajax({
+				url: "api/sync-to",
+				dataType: "json",
+                contentType: "application/json",
+				type : "POST",
+				success : function(r) {
+                    alert("Calendar synchronized in Google");
+				},
+                error: function(response) {
+                    alert("Sync-to failed: " + JSON.stringify(response.responseJSON));
+                }
+			  });
+			}
+			
+			function syncFrom() {
+				$.ajax({
+				url: "api/sync-from",
+				dataType: "json",
+                contentType: "application/json",
+				type : "POST",
+				success : function(r) {
+                    alert("Calendar synchronized from Google");
+					window.location.reload(true)
+				},
+                error: function(response) {
+                    alert("Sync-to failed: " + JSON.stringify(response.responseJSON));
+                }
+			  });
+			}
 		</script>
     </body>
 </html>
