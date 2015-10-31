@@ -10,7 +10,7 @@ function syncFromGoogle(eventCollection) {
     const eventUpdates = R.map(R.curry(syncEventFromGoogle)(eventCollection), result.events)
 
     return Promise.all(eventUpdates).then((updates) =>{
-      console.log("Succesfully synced ", updates.length, "events from Google);
+      console.log("Succesfully synced ", updates.length, "events from Google");
       return Promise.resolve({syncedEvents: updates.length});
     })
   })
