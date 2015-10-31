@@ -194,8 +194,8 @@
 			<div style="float:right;">
 				<form method="get" action="/event">
 					<input type="button" class="bouton_style" style="color:#888;margin:0px;" value="Add" onclick="openWindow(2,0)" />
-					<input type="submit" class="bouton_style" style="color:#888;margin:0px;" value="Sync. to Google" onclick="syncTo();" />
-					<input type="submit" class="bouton_style" style="color:#888;margin:0px;" value="Sync. from Google" onclick="syncFrom();" />
+					<input type="button" class="bouton_style" style="color:#888;margin:0px;" value="Sync. to Google" onclick="syncTo()" />
+					<input type="button" class="bouton_style" style="color:#888;margin:0px;" value="Sync. from Google" onclick="syncFrom();" />
 				</form>
 			</div>
 		</div>
@@ -403,7 +403,7 @@
                 contentType: "application/json",
 				type : "POST",
 				success : function(r) {
-                    alert("Calendar synchronized in Google");
+                    alert("Calendar synchronized to Google");
 				},
                 error: function(response) {
                     alert("Sync-to failed: " + JSON.stringify(response.responseJSON));
