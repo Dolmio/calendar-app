@@ -56,6 +56,13 @@
 			border:1px solid #ddd;
 			background-color:#fff;
 			}
+			.mainDayCell {
+			padding:3px 10px;
+			color:#888;
+			font-size:12px;
+			border:1px solid #ddd;
+			background-color:#fff;
+			}
 			.secCell {
 			padding:5px 5px;
 			margin-right:10px;
@@ -84,6 +91,13 @@
 			padding:30px 10px;
 			color:#fff;
 			font-size:24px;
+			border:1px solid #ddd;
+			background-color:#00B4FF;
+			}
+			.mainDayCellEvent {
+			padding:3px 10px;
+			color:#fff;
+			font-size:12px;
 			border:1px solid #ddd;
 			background-color:#00B4FF;
 			}
@@ -122,10 +136,11 @@
 				$( "#datepicker1" ).datepicker({ dateFormat: 'yy-mm-dd' });
 				$( "#datepicker2" ).datepicker({ dateFormat: 'yy-mm-dd' });
 			});
-			var html="";
-			var jsonData = <%- events %>;
+			var html="", tempHtml="", dateTempHtml="";
+			var jsonData = "";
 			var id = "";
 			var dayWithEvents = [];
+			var hourWithEvents = [];
 			var temp = [],verif = [];
 			var dateNowJS = new Date();
 			var monthJS = dateNowJS.getMonth();
@@ -150,6 +165,7 @@
 							if(temp[1] == (monthJSVar+1)) {
 								if(verif[0] == "0") {
 									dayWithEvents.push(verif[1]);
+									
 								} else {
 									dayWithEvents.push(temp[2]);
 								}
@@ -170,7 +186,15 @@
 							html+="<div style='float:right;margin:10px;'><input type='button' class='bouton_style' style='color:#888;padding:5px;font-size:12px;' value='Delete' onclick=\"delEvent('"+id+"');\"/></div>";
 							html+="<div style='float:right;margin:10px;'><input type='button' class='bouton_style' style='color:#888;padding:5px;font-size:12px;' value='Update' onclick=\"openWindow2('"+id+"','"+upDescEvent+"','"+upLocEvent+"','"+upStartDate+"','"+upStartHour+"','"+upEndDate+"','"+upEndHour+"');\"/></div>";
 						}
-						html += "<div class='secCell'>"+k+"</div><div style='padding:5px;'>"+v+"</div>";   
+						tempHtml = k;
+						tempHtml = tempHtml.replace("_id", "ID");
+						tempHtml = tempHtml.replace("description", "Description");
+						tempHtml = tempHtml.replace("location", "Location");
+						tempHtml = tempHtml.replace("startTime", "Start time");
+						tempHtml = tempHtml.replace("endTime", "End time");
+						dateTempHtml = v.toString();
+						dateTempHtml = dateTempHtml.replace(":00.000Z"," ");
+						html += "<div class='secCell'>"+tempHtml+"</div><div style='padding:5px;'>"+dateTempHtml+"</div>";   
 					});
 					html += "</div>";
 				});
@@ -178,7 +202,52 @@
 				return dayWithEvents;
 			}
 
-			loadEvents(jsonData,monthJS);
+			function loadDayEvents(eventsInJson, monthJSVar, LoadedDay) {
+				hourWithEvents = [];
+				$(eventsInJson).each(function(i,val){
+					$.each(val,function(k,v){
+						if(k == "_id") { 
+							id  = v; 
+						} else if (k == "description"){ 
+							upDescEvent = v;
+						} else if (k == "location"){ 
+							upLocEvent = v;
+						} else if (k == "startTime" || k == "endTime") {
+							temp = v.toString().split("T"); 
+							temp = temp[0].split("-");
+							verif = temp[2].split("");
+							if(temp[1] == (monthJSVar+1)) {
+								if(verif[0] == "0") {
+									if(verif[1] == LoadedDay) {
+										temp = v.toString().split("T"); 
+										temp = temp[1].toString().split(":");
+										verif = temp[0].split("");
+										if(verif[0] == "0") {
+											hourWithEvents.push(verif[1]);
+										} else {
+											hourWithEvents.push(temp[0]);
+										}
+										hourWithEvents.push(upDescEvent);
+									}
+								} else {
+									if(temp[2] == LoadedDay) {
+										temp = v.toString().split("T"); 
+										temp = temp[1].toString().split(":"); 
+										verif = temp[0].split("");
+										if(verif[0] == "0") {
+											hourWithEvents.push(verif[1]);
+										} else {
+											hourWithEvents.push(temp[0]);
+										}
+										hourWithEvents.push(upDescEvent);
+									}
+								}
+							}
+						}
+					});
+				});
+				return hourWithEvents;
+			}
 			
 			
 		</script>
@@ -223,9 +292,9 @@
 				document.getElementById('donnees').innerHTML = html;
 			}
 			
-			showEvents();
 			
 			var dateNow = new Date();
+			var day = dateNow.getDay();
 			var month = dateNow.getMonth();
 			var year = dateNow.getFullYear();
 			var tableMonth = ["Jan.","Feb.","Mar.","Apr.","May","Jun.","Jul.","Aug.","Sep.","Oct.","Nov.","Dec."];
@@ -247,7 +316,7 @@
 					html2 += "<tr>";
 					for(var j = 1 ; j <= 7 ; j++) {
 						if(7*i+j <= tableDay[showMonth]) {
-							html2 += "<td class='mainCell' id='cell"+ (7*i+j) +"' onclick='openWindow(1,"+ (7*i+j) +");'>"+ (7*i+j) +"</td>";
+							html2 += "<td class='mainCell' id='cell"+ (7*i+j) +"' onclick='getDayCalendar("+(7*i+j)+","+showMonth+","+showYear+",0);'>"+ (7*i+j) +"</td>";
 						} else {
 							html2 += "<td class='mainCellNext'>"+ ((7*i+j)-tableDay[showMonth]) +"</td>";
 						}
@@ -258,14 +327,47 @@
 				var dayWithEvents = loadEvents(jsonData, showMonth);
 				colorDayWithEvents(dayWithEvents);
 			}
-			getCalendar(month,year,0);
+			
+			function getDayCalendar(showDay,showMonth,showYear,operation) {
+				var html2 = "";
+				showDay = showDay + operation;
+				if(showDay < 1) { showMonth -= 1; showDay = tableDay[showMonth]; }
+				if(showDay > tableDay[showMonth]) { showMonth += 1; showDay = 1; }
+				if(showMonth < 0) { showYear -= 1; showMonth = 11; }
+				if(showMonth > 11) { showYear += 1; showMonth = 0; }
+
+				for(var i=0;i<tableMonth.length;i++) {
+					if(i==showMonth) {	
+						document.getElementById('setMonth').innerHTML = "<input type='button' class='bouton_style' style='float:left;' value='<' onclick='getDayCalendar("+showDay+","+showMonth+","+showYear+",-1);' /><a href='#' style='color:#00B4FF; text-decoration:none;' onclick='getCalendar("+showMonth+","+showYear+",0);'>Month view</a> > " + tableMonth[i] + " " + showDay + "<input type='button' class='bouton_style' style='float:right;' value='>' onclick='getDayCalendar("+showDay+","+showMonth+","+showYear+",1);' />";
+					}
+				}
+				
+				for(var i = 0 ; i < 24 ; i++) {
+					html2 += "<tr>";
+					html2 += "<td class='mainDayCell' style='width:20%;'>"+ i +":00</td><td class='mainDayCell' id='cellDay"+ i +"' onclick='openWindow(1,"+ showDay +");'></td>";
+					html2 += "</tr>";
+				}
+				document.getElementById('mainCalendar').innerHTML = html2;
+				var hourWithEvents = loadDayEvents(jsonData, showMonth, showDay);
+				colorHourWithEvents(hourWithEvents);
+			}
+			
+			function colorHourWithEvents(hourWithEventsVar) {
+				for(var i=0; i<hourWithEventsVar.length; i++) {
+					if(i%2 == 0) {
+						document.getElementById('cellDay'+hourWithEventsVar[i]).className = "mainDayCellEvent";
+					} else {
+						document.getElementById('cellDay'+hourWithEventsVar[i-1]).innerHTML = hourWithEventsVar[i];
+					}
+				}
+			}
 			
 			function colorDayWithEvents(dayWithEventsVar) {
 				for(var i=0; i<dayWithEventsVar.length; i++) {
 					document.getElementById('cell'+dayWithEventsVar[i]).className = "mainCellEvent";
 				}
 			}
-			colorDayWithEvents(dayWithEvents);
+			
 			
 			var selected = 0;
 			var pos_top = (window.innerHeight / 2) - 40 - 125;
@@ -387,6 +489,12 @@
                 contentType: "application/json",
 				type : "GET",
 				success : function(r) {
+					if (jsonData == "") { jsonData = r; 
+						loadEvents(jsonData,monthJS);
+						showEvents();
+						getCalendar(month,year,0);
+						colorDayWithEvents(dayWithEvents);
+					}
                     loadEvents(r);
 					showEvents();
 				},
@@ -426,6 +534,9 @@
                 }
 			  });
 			}
+
+			findEvent("");
+			
 		</script>
     </body>
 </html>
