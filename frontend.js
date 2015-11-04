@@ -1,6 +1,5 @@
 const express = require('express'),
       app = express(),
-      fetch = require('node-fetch'),
       proxy = require('express-http-proxy');
 
 
@@ -17,13 +16,5 @@ app.use('/api', proxy(apiPath, {
 }));
 
 app.get('/', (req,res) => {
-  fetch(apiPath + "/event")
-    .then((results) => results.json())
-    .then((json) => {
-      res.render('calendar.ejs',{events: JSON.stringify(json)})
-    })
-    .catch((error) => {
-      console.log(error)
-      res.status(500).json({})
-    });
+  res.render('calendar.ejs');
 });
