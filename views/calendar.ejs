@@ -6,6 +6,7 @@
 		<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
 		<script src="//code.jquery.com/jquery-1.10.2.js"></script>
 		<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.6/moment.js"></script>
 		<style>
 			body{
 			background-color:#ddd;
@@ -136,7 +137,7 @@
 				$( "#datepicker1" ).datepicker({ dateFormat: 'yy-mm-dd' });
 				$( "#datepicker2" ).datepicker({ dateFormat: 'yy-mm-dd' });
 			});
-			var html="", tempHtml="", dateTempHtml="";
+			var html="", tempHtml="", formattedAttributeValue="";
 			var jsonData = "";
 			var id = "";
 			var dayWithEvents = [];
@@ -145,7 +146,9 @@
 			var dateNowJS = new Date();
 			var monthJS = dateNowJS.getMonth();
 			var upDescEvent = "", upLocEvent = "", upStartDate = "", upStartHour = "", upEndDate = "", upEndHour = "";
-			
+			var timeFormat = "YYYY-D-MM HH:mm";
+            var dateFormat = "YYYY-MM-D";
+            var hourFormat = "HH:mm";
 			function loadEvents(eventsInJson, monthJSVar) {
 				dayWithEvents = [];
 				html="<div class='secTable'>";
@@ -172,16 +175,14 @@
 							}
 						}
 						if(k == "startTime") {
-							temp = v.toString().split("T"); 
-							upStartDate = temp[0];
-							temp = temp[1].toString().split(":"); 
-							upStartHour = temp[0] + ":" + temp[1];
+                            var m = moment(new Date(v));
+							upStartDate = m.format(dateFormat);
+							upStartHour = m.format(hourFormat)
 						}
 						if(k == "endTime") {
-							temp = v.toString().split("T"); 
-							upEndDate = temp[0];
-							temp = temp[1].toString().split(":"); 
-							upEndHour = temp[0] + ":" + temp[1];
+                            var m = moment(new Date(v));
+							upEndDate = m.format(dateFormat);
+							upEndHour =  m.format(hourFormat)
 							
 							html+="<div style='float:right;margin:10px;'><input type='button' class='bouton_style' style='color:#888;padding:5px;font-size:12px;' value='Delete' onclick=\"delEvent('"+id+"');\"/></div>";
 							html+="<div style='float:right;margin:10px;'><input type='button' class='bouton_style' style='color:#888;padding:5px;font-size:12px;' value='Update' onclick=\"openWindow2('"+id+"','"+upDescEvent+"','"+upLocEvent+"','"+upStartDate+"','"+upStartHour+"','"+upEndDate+"','"+upEndHour+"');\"/></div>";
@@ -193,9 +194,9 @@
 						tempHtml = tempHtml.replace("startTime", "Start time");
 						tempHtml = tempHtml.replace("endTime", "End time");
 
-                        dateTempHtml = formatPossiblyEmptyValue(v);
-						dateTempHtml = dateTempHtml.replace(":00.000Z"," ");
-						html += "<div class='secCell'>"+tempHtml+"</div><div style='padding:5px;'>"+dateTempHtml+"</div>";   
+
+                        formattedAttributeValue = formatAttributeValue(k,v);
+						html += "<div class='secCell'>"+tempHtml+"</div><div style='padding:5px;'>"+formattedAttributeValue+"</div>";
 					});
 					html += "</div>";
 				});
@@ -203,12 +204,17 @@
 				return dayWithEvents;
 			}
 
-            function formatPossiblyEmptyValue(string) {
-                if (!string) {
+            function formatAttributeValue(key, value) {
+                if (!value) {
                     return "-"
                 }
                 else {
-                    return string.toString() == "" ? "-" : string.toString();
+                    if(key == "startTime" || key == "endTime") {
+                        return moment(new Date(value)).format(timeFormat)
+                    }
+                    else {
+                        return value.toString() == "" ? "-" : value.toString();
+                    }
                 }
             }
 
