@@ -192,7 +192,8 @@
 						tempHtml = tempHtml.replace("location", "Location");
 						tempHtml = tempHtml.replace("startTime", "Start time");
 						tempHtml = tempHtml.replace("endTime", "End time");
-						dateTempHtml = v.toString();
+
+                        dateTempHtml = formatPossiblyEmptyValue(v);
 						dateTempHtml = dateTempHtml.replace(":00.000Z"," ");
 						html += "<div class='secCell'>"+tempHtml+"</div><div style='padding:5px;'>"+dateTempHtml+"</div>";   
 					});
@@ -201,6 +202,15 @@
 				html += "</div>";
 				return dayWithEvents;
 			}
+
+            function formatPossiblyEmptyValue(string) {
+                if (!string) {
+                    return "-"
+                }
+                else {
+                    return string.toString() == "" ? "-" : string.toString();
+                }
+            }
 
 			function loadDayEvents(eventsInJson, monthJSVar, LoadedDay) {
 				hourWithEvents = [];
