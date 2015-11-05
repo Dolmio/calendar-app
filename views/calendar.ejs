@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html xmlns="http://www.w3.org/1999/html">
     <head>
         <meta charset="utf-8" />
         <title>Calendar</title>
@@ -7,6 +7,7 @@
 		<script src="//code.jquery.com/jquery-1.10.2.js"></script>
 		<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.6/moment.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/ramda/0.18.0/ramda.min.js"></script>
 		<style>
 			body{
 			background-color:#ddd;
@@ -218,54 +219,21 @@
                 }
             }
 
-			function loadDayEvents(eventsInJson, monthJSVar, LoadedDay) {
-				hourWithEvents = [];
-				$(eventsInJson).each(function(i,val){
-					$.each(val,function(k,v){
-						if(k == "_id") { 
-							id  = v; 
-						} else if (k == "description"){ 
-							upDescEvent = v;
-						} else if (k == "location"){ 
-							upLocEvent = v;
-						} else if (k == "startTime" || k == "endTime") {
-							temp = v.toString().split("T"); 
-							temp = temp[0].split("-");
-							verif = temp[2].split("");
-							if(temp[1] == (monthJSVar+1)) {
-								if(verif[0] == "0") {
-									if(verif[1] == LoadedDay) {
-										temp = v.toString().split("T"); 
-										temp = temp[1].toString().split(":");
-										verif = temp[0].split("");
-										if(verif[0] == "0") {
-											hourWithEvents.push(verif[1]);
-										} else {
-											hourWithEvents.push(temp[0]);
-										}
-										hourWithEvents.push(upDescEvent);
-									}
-								} else {
-									if(temp[2] == LoadedDay) {
-										temp = v.toString().split("T"); 
-										temp = temp[1].toString().split(":"); 
-										verif = temp[0].split("");
-										if(verif[0] == "0") {
-											hourWithEvents.push(verif[1]);
-										} else {
-											hourWithEvents.push(temp[0]);
-										}
-										hourWithEvents.push(upDescEvent);
-									}
-								}
-							}
-						}
-					});
-				});
-				return hourWithEvents;
-			}
-			
-			
+            function getEventsIn(date, events) {
+                return R.filter(function(event) {
+                    return  new Date(event.startTime) >= date && new Date(event.endTime) <= moment(date).add(1, 'days').toDate();
+                }, events);
+            }
+
+            function eventsPerHourDuring(date, events) {
+                var eventsInDay = getEventsIn(date, events);
+                return  R.map(function(hour) {
+                    var currentHourTime = moment(date).add(hour, 'hours').toDate();
+                    return R.filter(function(event) {
+                        return currentHourTime >= moment(event.startTime).toDate() && currentHourTime < new Date(event.endTime);
+                    }, eventsInDay)
+                }, R.range(0, 24))
+            }
 		</script>
     </head>
     <body>
@@ -364,20 +332,20 @@
 					html2 += "</tr>";
 				}
 				document.getElementById('mainCalendar').innerHTML = html2;
-				var hourWithEvents = loadDayEvents(jsonData, showMonth, showDay);
-				colorHourWithEvents(hourWithEvents);
+
+                var hourWithEvents = eventsPerHourDuring(new Date(parseInt(showYear), parseInt(showMonth), parseInt(showDay)), jsonData)
+                colourHourElements(hourWithEvents)
 			}
-			
-			function colorHourWithEvents(hourWithEventsVar) {
-				for(var i=0; i<hourWithEventsVar.length; i++) {
-					if(i%2 == 0) {
-						document.getElementById('cellDay'+hourWithEventsVar[i]).className = "mainDayCellEvent";
-					} else {
-						document.getElementById('cellDay'+hourWithEventsVar[i-1]).innerHTML = hourWithEventsVar[i];
-					}
-				}
-			}
-			
+
+
+            function colourHourElements(hoursWithEvents) {
+                R.addIndex(R.forEach)(function(eventsInHour, hour) {
+                    R.forEach(function(event) {
+                        document.getElementById('cellDay'+ hour).className = "mainDayCellEvent";
+                        document.getElementById('cellDay'+hour).innerHTML = event.description;
+                    }, eventsInHour)
+                }, hoursWithEvents)
+            }
 			function colorDayWithEvents(dayWithEventsVar) {
 				for(var i=0; i<dayWithEventsVar.length; i++) {
 					document.getElementById('cell'+dayWithEventsVar[i]).className = "mainCellEvent";
