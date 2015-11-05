@@ -131,6 +131,10 @@
 			#map_canvas {
 			height: 100%;
 			}
+            .mainDayCellEvent div {
+                width: 100%;
+                margin: 0px 20px;
+            }
 		</style>
 		
 		<script>
@@ -342,7 +346,7 @@
                 R.addIndex(R.forEach)(function(eventsInHour, hour) {
                     R.forEach(function(event) {
                         document.getElementById('cellDay'+ hour).className = "mainDayCellEvent";
-                        document.getElementById('cellDay'+hour).innerHTML = event.description;
+                        $("#cellDay" + hour).append("<div>" + event.description + "</div>")
                     }, eventsInHour)
                 }, hoursWithEvents)
             }
