@@ -50,6 +50,7 @@ cd calendar-app
 npm install
 cp sample-environment.json environment.json #fill required secrets to environment.json (google calendar)
 npm start
+node frontend.js
 Profit!
 ```
 
