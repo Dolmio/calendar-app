@@ -7,7 +7,36 @@ Vivien Letonnellier
 
 https://github.com/Dolmio/calendar-app
 
-The API is available at http://130.233.42.155:8080/
+The web application is available at http://130.233.42.155:8080/
+
+The API is available at http://130.233.42.155:8080/api
+
+
+# Web application
+
+## Features
+
+* Add events
+* Edit events
+* Remove events
+* Search events
+* Sync events to hardcoded google calendar
+* Sync events from hardcoded google calendar
+* View events as a list and in monthly and daily views
+
+## Technical notes
+Jquery, Jquery-UI and Ramda javascript-libraries were used to create the frontend. Google-apis and google-auth-library
+npm modules were used in the backend to implement the synchronization to Google Calendar.
+
+The synchronization is intelligent in a way that it won't make duplicate events, but rather updates the values from the source
+to the destination. One limitation the synchronization is that it won't delete any events.
+So if you synchronize events from calendar to google and then delete one event from calendar and synchronize again. The
+event in google calendar is not deleted.
+
+
+
+
+
 
 # Local Development
 
@@ -293,9 +322,9 @@ git push production master
                                                                    "location": "Espoo3",
                                                                    "startTime": "2015-02-08 09:30",
                                                                    "endTime": "2015-02-08 10:30",
-                                                                   "attendees: ["example@gmail.com"],
+                                                                   "attendees": ["example@gmail.com"],
                                                                    "_id": "5613c934b03343196a0b1893"
-                                                               })
+                                                               }),
       success : function(r) {
         console.log(r);
       }
@@ -360,7 +389,7 @@ OR
       url: "/event/5613c934b03343196a0b1893",
       dataType: "json",
       type : "PUT",
-      data: JSON.stringify({"endTime": "2015-02-08 11:30"})
+      data: JSON.stringify({"endTime": "2015-02-08 11:30"}),
       success : function(r) {
         console.log(r);
       }
