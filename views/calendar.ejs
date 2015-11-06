@@ -423,8 +423,8 @@
 					data: JSON.stringify({
 						"description": description,
 						"location": location,
-						"startTime": startTime,
-						"endTime": endTime,
+						"startTime": new Date(startTime),
+						"endTime": new Date(endTime),
 						"attendees" : ["example@gmail.com"]}),
 					success : function(r) {
 					  window.location.reload(true);
@@ -458,8 +458,8 @@
 				data: JSON.stringify({
 					"description": description,
 					"location": location,
-					"startTime": startTime,
-					"endTime": endTime,
+					"startTime": new Date(startTime),
+					"endTime": new Date(endTime),
 					"attendees" : ["example@gmail.com"]}),
 				success : function(r) {
                     window.location.reload(true)
