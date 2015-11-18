@@ -77,7 +77,7 @@ function sendEmailToNewAttendees(event, oldAttendees, newAttendees) {
 }
 
 function resolveRecipientsForAttendanceEmail(oldAttendees, newAttendees) {
-  return oldAttendees ?  R.difference(newAttendees, oldAttendees) : newAttendees;
+  return oldAttendees ?  R.difference(newAttendees, oldAttendees) : newAttendees ? newAttendees : [];
 }
 
 function createCalendarEventRoute(eventsCollection) {
